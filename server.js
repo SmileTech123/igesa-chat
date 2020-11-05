@@ -4,7 +4,8 @@ var express = require("express");
 var app = express(); // express app which is used boilerplate for HTTP
 var http = require("http")
 var https = require('https')
-var fs = require('fs')
+var fs = require('fs-extra')
+const getSize = require('get-folder-size');
 var options = {
   header: ('Content-Type','application/octet-stream'),
   key: fs.readFileSync('./cert/key.pem'),
@@ -176,6 +177,17 @@ io.on("connection", function(socket) {
 
 
 socket.on('file', async file => {
+
+  getSize("./tmp/file", (err, size) => {
+    if (err) { throw err; }
+   
+    console.log(size + ' bytes');
+    size=(size / 1024 / 1024).toFixed(2)
+    if(size>50){
+      fs.emptyDirSync('./tmp/file')
+    }
+  });
+
 
   const buffer = Buffer.from(file.file);
   fs.writeFileSync('./tmp/file/'+file.filename, buffer) // fs.promises
