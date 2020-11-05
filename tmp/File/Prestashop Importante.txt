@@ -1,0 +1,9 @@
+inserire nel file htaccess
+|
+|
+|
+\/ 
+RewriteEngine on
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+-----------------------------------------------------------------------
