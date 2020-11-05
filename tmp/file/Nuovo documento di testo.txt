@@ -1,0 +1,50 @@
+function sendactegoryprestsubgroup(prestan,schemaCategorie, size,cat,cod,endPoint,codicigruppi,cb) {
+    var x = 0;
+    
+    var pattern = /<|>|;|=|#|.|,|" "|/g
+  
+    //console.log("ecco my category")
+    //console.log("categorie da pushare",cat)
+    console.log(codicigruppi)
+    
+    cod.forEach((element, index) => {
+        prestan.get('categories', {
+            'display': '[id]',
+            'filter[link_rewrite]': cod[index]
+        }).then(async function(response) {
+            var sottogruppi = await fetch(endPoint+'IXGRUP00?Livello=2&codlivello='+cod[index], {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).catch((error) => {
+                assert.isNotOk(error, 'Promise error');
+                done();
+            });
+            sottogruppi=sottogruppi.json()
+            sottogruppi=sottogruppi.response.dati
+            let idparent=response.prestashop.categories.category.id;
+            for (let i = 0; i < sottogruppi.length; i++) {
+                schemaCategorie.prestashop.category.active = 0
+                schemaCategorie.prestashop.category.id_parent = idparent
+                schemaCategorie.prestashop.category.name.language._ = sottogruppi[i].destabella
+                schemaCategorie.prestashop.category.link_rewrite.language._ = sottogruppi[i].codtabella
+            prestan.add('categories', schemaCategorie, {})
+                .then(() => {
+                    x++
+                    if (x == size.length) {
+                        cb();
+                    }
+                })
+                
+            }
+           
+        }).catch(function(errors) {
+            console.log(errors);
+        });
+               
+
+
+    });
+
+}

@@ -92,7 +92,7 @@ function previewFile2() {
    //console.log("typing typing ....");
    //socket.emit('typing', 'typing...');
    socket.emit('typing', {
-     text: name + " sta scrivendo ..."
+     text: name+" sta scrivendo ..."
    });
    clearTimeout(timeout);
    timeout = setTimeout(timeoutFunction, 1000);
@@ -183,14 +183,14 @@ socket.on('file', file => {
  "<div class='box2'style='text-align:center'>"+
  file.filename.substr(0,6)+"..."+file.filename.substr(-3)+
  "</div>"+
- "<a href='https://192.168.0.242:8000/tmp/file/"+file.filename+"' download><img style='height:28px' src='./images/file.png'></img></a>"+
+ "<a href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' download><img style='height:28px' src='./images/file.png'></img></a>"+
 "</div>";
   }else{
     var fileshtml="<div class='box'>" +
  "<div class='box2'style='text-align:center'>"+
  file.filename+
  "</div>"+
- "<a href='https://192.168.0.242:8000/"+file.filename+"' target='_blank'><img style='height:28px' onclick='' src='./images/file.png'></img></a>"+
+ "<a href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' target='_blank'><img style='height:28px' onclick='' src='./images/file.png'></img></a>"+
 "</div>";
   }
   $message.append(fileshtml);

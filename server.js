@@ -1,8 +1,8 @@
 var PORT = process.env.PORT || 3000;
-var PORTHTTPS = process.env.PORT || 80; // take port from heroku or for loacalhost
+var PORTHTTPS = process.env.PORT || 4000; // take port from heroku or for loacalhost
 var express = require("express");
 var app = express(); // express app which is used boilerplate for HTTP
-//var http = require("http")
+var http = require("http")
 var https = require('https')
 var fs = require('fs')
 var options = {
@@ -20,7 +20,7 @@ var options = {
 ].join(':')
 };
 
-var server = https.createServer(options,app)
+var server = http.createServer(options,app)
 //var serverhttp = http.createServer(app)
 //moment js
 var moment = require("moment");
@@ -31,7 +31,7 @@ var clientInfo = {};
 var io = require("socket.io")(server);
 
 // expose the folder via express thought
-app.use(express.static(__dirname,{index:'home.html'}));
+app.use(express.static(__dirname,{index:'index.html'}));
 
 // send current users to provided scoket
 function sendCurrentUsers(socket) { // loading current users
