@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@replit/database": "^2.0.0",
     "buffer": "^5.7.0",
     "debug": "^4.2.0",
     "electron": "^10.1.5",

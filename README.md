@@ -6,3 +6,4 @@ Users can chat in realtime across various meeting rooms.
 
 Demo: https://bhupendra1011.herokuapp.com/
 "# igesa-chat" 
+const Database = require("@replit/database")

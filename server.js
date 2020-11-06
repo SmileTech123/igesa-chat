@@ -1,6 +1,14 @@
 var PORT = process.env.PORT || 3000;
 var PORTHTTPS = process.env.PORT || 4000; // take port from heroku or for loacalhost
+ var data=new Date()
+    var anno= data.getFullYear()
+    var mese = data.getMonth()
+    var giorno= data.getDate()
 var express = require("express");
+var room
+const Database = require("@replit/database")
+const db = new Database()
+
 var app = express(); // express app which is used boilerplate for HTTP
 var http = require("http")
 var https = require('https')
@@ -37,6 +45,7 @@ app.use(express.static(__dirname,{index:'index.html'}));
 // send current users to provided scoket
 function sendCurrentUsers(socket) { // loading current users
   var info = clientInfo[socket.id];
+  console.log(info.room)
   var users = [];
   if (typeof info === 'undefined') {
     return;
@@ -44,10 +53,13 @@ function sendCurrentUsers(socket) { // loading current users
   // filte name based on rooms
   Object.keys(clientInfo).forEach(function(socketId) {
     var userinfo = clientInfo[socketId];
+    console.log(userinfo)
     // check if user room and selcted room same or not
     // as user should see names in only his chat room
     if (info.room == userinfo.room) {
       users.push(userinfo.name);
+      console.log(userinfo.room)
+      
     }
 
   });
@@ -63,12 +75,22 @@ function sendCurrentUsers(socket) { // loading current users
 
 
 // io.on listens for events
-io.on("connection", function(socket) {
-  console.log("User is connected");
+io.on("connection", async function(socket) {
+  getSize("./tmp/log", (err, size) => {
+  if (err) { throw err; }
+  var dimension=(size / 1024 / 1024).toFixed(2)
+  console.log(size)
+  if(dimension>50){
+   fs.emptydir("./tmp/log")
+  }
+});
 
+  
+  console.log("User is connected");
   //for disconnection
   socket.on("disconnect", function() {
     var userdata = clientInfo[socket.id];
+    
     if (typeof(userdata !== undefined)) {
       socket.leave(userdata.room); // leave the room
       //broadcast leave room to only memebers of same room
@@ -87,7 +109,38 @@ io.on("connection", function(socket) {
   // for private chat
   socket.on('joinRoom', function(req) {
     clientInfo[socket.id] = req;
+    room=req.room
     socket.join(req.room);
+      if(fs.existsSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")){
+      var mexold =  fs.readFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")
+      mexold=JSON.parse(mexold)
+      //console.log(mexold)
+    mexold.messaggi.forEach((mex)=>{
+    socket.emit("message", {
+    text: mex.text,
+    timestamp: moment().valueOf(),
+    name: mex.name
+  });
+    })
+   
+
+   
+  }else{
+    if(!fs.existsSync("./tmp/log/"+room)){
+    fs.mkdirSync("./tmp/log/"+room)
+    fs.mkdirSync("./tmp/log/"+room+"/txt")
+    }
+  }
+
+   var deletemex=fs.readdirSync("./tmp/log/"+room)
+    var fileoggi=anno+"-"+mese+"-"+giorno
+    //console.log(deletemex[0])
+    console.log(fileoggi+".json")
+    if(deletemex[0]!=fileoggi+".json"){
+      if(!fs.statSync("./tmp/log/"+room+"/"+deletemex[0]).isDirectory()){
+      fs.unlinkSync("./tmp/log/"+room+"/"+deletemex[0])
+    }
+    }
     //broadcast new user joined room
     socket.broadcast.to(req.room).emit("message", {
       name: "Sistema",
@@ -116,26 +169,56 @@ io.on("connection", function(socket) {
     name: "Sistema"
   });
 
+
   // listen for client message
   socket.on("message", function(message) {
+    
+    db.set("name", message.name).then(() => {
+    });
+    db.set("text", message.text).then(() => {});
+    var textlog= message.time+"\n"+"Utente: "+message.name+" Messaggio: "+message.text+"\n"
+    
+   
     console.log("Message Received : " + message.text);
-    var dati= message.time+"\n"+"Utente: "+message.name+" Messaggio: "+message.text+"\n"
-    var data=new Date()
-    var anno= data.getFullYear()
-    var mese = data.getMonth()
-    var giorno= data.getDate()
-    switch (message.room) {
+    fs.writeFileSync("./tmp/log/"+room+"/txt/"+anno+"-"+mese+"-"+giorno+".txt",textlog,{flag:"a"})
+    var dati={
+      messaggi:[]
+       }
+    if(fs.existsSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")){
+      //console.log("esisto")
+       var filex=fs.readFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")
+      dati=JSON.parse(filex)
+      //console.log(dati)
+      dati.messaggi.push({
+      name: message.name,
+      text: message.text,
+      room: message.room})
+      dati=JSON.stringify(dati)
+      fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
+    }else{
+       dati.messaggi.push({
+      name: message.name,
+      text: message.text,
+      room: message.room})
+      dati=JSON.stringify(dati)
+      fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
+    }
+
+    
+
+    
+    /*switch (message.room) {
       case "Alessio":
-        fs.writeFileSync("./tmp/log/Alessio/"+anno+"-"+mese+"-"+giorno+".txt",dati,{flag:'a'})
+        fs.writeFileSync("./tmp/log/Alessio/"+anno+"-"+mese+"-"+giorno+".json",dati)
         break;
 
       case "Gesù":
-        fs.writeFileSync("./tmp/log/Gesù/"+anno+"-"+mese+"-"+giorno+".txt",dati,{flag:'a'})
+        fs.writeFileSync("./tmp/log/Gesù/"+anno+"-"+mese+"-"+giorno+".json",dati)
       break;
     
       default:
         break;
-    }
+    }*/
     
     
     // to show all current users
@@ -181,8 +264,9 @@ socket.on('file', async file => {
   getSize("./tmp/file", (err, size) => {
     if (err) { throw err; }
    
-    console.log(size + ' bytes');
+    
     size=(size / 1024 / 1024).toFixed(2)
+    //console.log(size + ' MB');
     if(size>50){
       fs.emptyDirSync('./tmp/file')
     }
