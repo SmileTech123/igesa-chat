@@ -23,7 +23,7 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-6 col-md-offset-3 well">
+      <div id="sharecolor" class="col-md-6 col-md-offset-3 well">
         <!-- <a href="/index.html">Change Settings</a> -->
         <a class="btn btn-primary" href="thanks.html">Termina Chat</a>
         <h1 class="room-title text-center">Stanza: </h1>
@@ -39,19 +39,19 @@
              <span class="text-muted typing" style="padding-left: 6px;"></span>
             <img  id="imagepreview" style="border: 1px solid black;" src="" height="50">
             <div class="input-group">
-              <span style="padding-bottom: 0%;" class="input-group-addon">
+              <span id="sharecolor2" style="padding-bottom: 0%;" class="input-group-addon">
                 <label for="file-image">
-                  <i class="glyphicon glyphicon-picture"></i>
+                  <i id="icons"class="glyphicon glyphicon-picture"></i>
                 </label>
-                <label style="font-size: 20px;">/</label>
+                &nbsp;
                 <label for="file-input">
-                  <i class="glyphicon glyphicon-paperclip"></i>
+                  <i id="icons2"class="glyphicon glyphicon-paperclip"></i>
                 </label>
                 <input id="file-image"  onchange="previewFile()"style="display: none;" type="file" accept="image/*">
                 <input id="file-input"  onchange="previewFile2()"style="display: none;" type="file" >
                 
               </span>
-              <input autofocus class="form-control" id="messagebox" name="message" type="text" value="" />
+              <input autofocus class="form-control" id="messagebox" name="message" type="text" value="" style="height:41px" />
             </div>
 
           </div>

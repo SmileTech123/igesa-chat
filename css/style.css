@@ -50,4 +50,12 @@ strong {
   height: 0px;
   width: 0px;
   padding-left: 40px;
+  color: black;
+}
+
+.btn-dark {
+    color: #fff;
+    background-color: #2d2d2d;
+    border-color: white;
+
 }

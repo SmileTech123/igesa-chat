@@ -115,12 +115,30 @@ io.on("connection", async function(socket) {
       var mexold =  fs.readFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")
       mexold=JSON.parse(mexold)
       //console.log(mexold)
+      
+      
     mexold.messaggi.forEach((mex)=>{
-    socket.emit("message", {
+      console.log(moment.utc(mex.date).local().format("HH:mm"))
+      if(mex.text){
+    socket.emit("messageserver", {
     text: mex.text,
-    timestamp: moment().valueOf(),
+    timestamp: mex.date,
     name: mex.name
   });
+    } else if(mex.image){
+   socket.emit("imageserver", {
+    image: mex.image,
+    timestamp: mex.date,
+    name: mex.name
+  });
+  }else if(mex.filename){
+   socket.emit("fileserver", {
+    file: mex.file,
+    filename:mex.filename,
+    timestamp: mex.date,
+    name: mex.name
+  });
+  }
     })
    
 
@@ -173,9 +191,7 @@ io.on("connection", async function(socket) {
   // listen for client message
   socket.on("message", function(message) {
     
-    db.set("name", message.name).then(() => {
-    });
-    db.set("text", message.text).then(() => {});
+
     var textlog= message.time+"\n"+"Utente: "+message.name+" Messaggio: "+message.text+"\n"
     
    
@@ -188,18 +204,18 @@ io.on("connection", async function(socket) {
       //console.log("esisto")
        var filex=fs.readFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")
       dati=JSON.parse(filex)
-      //console.log(dati)
+      console.log(message.timestamp)
       dati.messaggi.push({
       name: message.name,
       text: message.text,
-      room: message.room})
+      date: moment().valueOf()})
       dati=JSON.stringify(dati)
       fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
     }else{
        dati.messaggi.push({
       name: message.name,
       text: message.text,
-      room: message.room})
+      date: moment().valueOf()})
       dati=JSON.stringify(dati)
       fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
     }
@@ -240,7 +256,30 @@ io.on("connection", async function(socket) {
   // ...
   
   socket.on('image', async image => {
-
+     var textlog= image.time+"\n"+"Utente: "+image.name+" Messaggio: "+image.image+"\n"
+     fs.writeFileSync("./tmp/log/"+room+"/txt/"+anno+"-"+mese+"-"+giorno+".txt",textlog,{flag:"a"})
+    var dati={
+      messaggi:[]
+       }
+    if(fs.existsSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")){
+      //console.log("esisto")
+       var filex=fs.readFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")
+      dati=JSON.parse(filex)
+      //console.log(dati)
+      dati.messaggi.push({
+      name: image.name,
+      image: image.image,
+      date: moment().valueOf()})
+      dati=JSON.stringify(dati)
+      fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
+    }else{
+     dati.messaggi.push({
+      name: image.name,
+      image: image.image,
+      date: moment().valueOf()})
+      dati=JSON.stringify(dati)
+      fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
+    }
     const buffer = Buffer.from(image.image, 'base64');
     fs.writeFileSync('./tmp/image1.jpg', buffer) // fs.promises
     /*socket.emit('image',image.toString('base64'))
@@ -260,6 +299,32 @@ io.on("connection", async function(socket) {
 
 
 socket.on('file', async file => {
+
+  var textlog= file.time+"\n"+"Utente: "+file.name+" Messaggio: "+file.image+"\n"
+     fs.writeFileSync("./tmp/log/"+room+"/txt/"+anno+"-"+mese+"-"+giorno+".txt",textlog,{flag:"a"})
+    var dati={
+      messaggi:[]
+       }
+    if(fs.existsSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")){
+      //console.log("esisto")
+       var filex=fs.readFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")
+      dati=JSON.parse(filex)
+      //console.log(dati)
+      dati.messaggi.push({
+      name: file.name,
+      filename: file.filename,
+      date: moment().valueOf()})
+      dati=JSON.stringify(dati)
+      fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
+    }else{
+    dati.messaggi.push({
+      name: file.name,
+      filename: file.filename,
+      date: moment().valueOf()})
+      dati=JSON.stringify(dati)
+      fs.writeFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json",dati)
+    }
+
 
   getSize("./tmp/file", (err, size) => {
     if (err) { throw err; }

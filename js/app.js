@@ -3,6 +3,27 @@
 //var $message = $('<li class = "list-group-item"></li>')
 var momentTimestamp=""
 
+$( document ).ready(function() {
+    var x = document.cookie;
+    $('[data-toggle="tooltip"]').tooltip()
+  if(x=="btn btn-light"||x==""){
+    $("#icons").css({"background-color":"#2d2d2d","border":"2px solid lightgrey","border-radius": "25px","padding": "5px","background-color":"lightgrey","color":"black"});
+        $("#icons2").css({"background-color":"#2d2d2d","border":"2px solid lightgrey","border-radius": "25px","padding": "5px","background-color":"lightgrey","color":"black"})
+  } else{
+     $(".btn").removeClass("btn btn-light").addClass("btn btn-dark");               
+     $(this).addClass("btn btn-dark");
+     $("#bottonecolore").text("Dark mode");
+     $("#sfondoform").css("background-color","#2d2d2d");
+      $("body").css("background-color","black");
+     $("label").css("color","white");
+     $("h1").css("color","white");
+      $("#sharecolor").css("background-color","#2d2d2d");
+       $("#sharecolor2").css("background-color","#2d2d2d");
+        $("#icons").css({"background-color":"#2d2d2d","border":"2px solid white","border-radius": "25px","padding": "5px","background-color":" white","color":"black"});
+        $("#icons2").css({"background-color":"#2d2d2d","border":"2px solid white","border-radius": "25px","padding": "5px","background-color":" white","color":"black"});
+  }
+});
+ 
  // listen for server connection
  // get query params from url
  var name = getQueryVariable("name") || 'Anonymous';
@@ -142,11 +163,10 @@ function previewFile2() {
  socket.on('image', image => {
   console.log(image)
 
-
   var $messages = $(".messages");
   var $message = $('<li class = "list-group-item"></li>');
   var $message1= "data:image/jpg;base64,"+image.image
-  var momentTimestamp = moment().format("HH:mm");
+  var momentTimestamp = moment.utc(image.timestamp).local().format("HH:mm");
   $message.append("<strong>" + momentTimestamp + " " + image.name + "</strong>");
   $message.append("<p></p>");
   var htmlimage="<img class='mymessages' src='"+$message1+"' style='width:30%'></img>"
@@ -168,26 +188,57 @@ function previewFile2() {
 });
 
 
-socket.on('file', file => {
-  //Sconsole.log(image)
+
+ socket.on('imageserver', image => {
+  //alert("ciao")
 
 
   var $messages = $(".messages");
   var $message = $('<li class = "list-group-item"></li>');
+  var $message1= "data:image/jpg;base64,"+image.image
+  var momentTimestamp = moment.utc(image.timestamp).local().format("HH:mm");
+  $message.append("<strong>" + momentTimestamp + " " + image.name + "</strong>");
+  $message.append("<p></p>");
+  var htmlimage="<img class='mymessages' src='"+$message1+"' style='width:30%'></img>"
+  $message.append(htmlimage);
+
+  $messages.append($message);
+  $message1='';
+  var obj = $("ul.messages.list-group");
+  var offset = obj.offset();
+  var scrollLength = obj[0].scrollHeight;
+  //  offset.top += 20;
+  $("ul.messages.list-group").animate({
+    scrollTop: scrollLength
+  },10);
+ 
+  //socket.emit('image', image)
+  //$("#imagechat").attr('src',"data:image/jpg;base64,"+image)
+  // Insert it into the DOM
+});
+
+
+
+socket.on('file', file => {
+  //Sconsole.log(image)
+  console.log(file)
+
+  var $messages = $(".messages");
+  var $message = $('<li class = "list-group-item"></li>');
   var $message1= file.file
-  var momentTimestamp = moment().format("HH:mm");
+  var momentTimestamp = moment.utc(file.timestamp).local().format("HH:mm");
   $message.append("<strong>" + momentTimestamp + " " + file.name + "</strong>");
   $message.append("<p></p>");
   if(file.filename.length>12){
- var fileshtml="<div class='box'>" +
+ var fileshtml="<a data-toggle='tooltip'title='"+file.filename+"'  href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' download> <div class='box'>" +
  "<div class='box2'style='text-align:center'>"+
  file.filename.substr(0,6)+"..."+file.filename.substr(-3)+
  "</div>"+
- "<a href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' download><img style='height:28px' src='./images/file.png'></img></a>"+
-"</div>";
+ "<img style='height:28px' src='./images/file.png'></img>"+
+"</div></a>";
   }else{
     var fileshtml="<div class='box'>" +
- "<div class='box2'style='text-align:center'>"+
+ "<div class='box2'style='text-align:center;'>"+
  file.filename+
  "</div>"+
  "<a href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' target='_blank'><img style='height:28px' onclick='' src='./images/file.png'></img></a>"+
@@ -204,6 +255,51 @@ socket.on('file', file => {
   $("ul.messages.list-group").animate({
     scrollTop: scrollLength - offset.top
   });
+ 
+  //socket.emit('image', image)
+  //$("#imagechat").attr('src',"data:image/jpg;base64,"+image)
+  // Insert it into the DOM
+});
+
+
+
+
+socket.on('fileserver', file => {
+  //Sconsole.log(image)
+  console.log(file)
+
+  var $messages = $(".messages");
+  var $message = $('<li class = "list-group-item"></li>');
+  var $message1= file.file
+  var momentTimestamp = moment.utc(file.timestamp).local().format("HH:mm");
+  $message.append("<strong>" + momentTimestamp + " " + file.name + "</strong>");
+  $message.append("<p></p>");
+  if(file.filename.length>12){
+ var fileshtml="<a data-toggle='tooltip'title='"+file.filename+"'  href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' download> <div class='box'>" +
+ "<div class='box2'style='text-align:center'>"+
+ file.filename.substr(0,6)+"..."+file.filename.substr(-3)+
+ "</div>"+
+ "<img style='height:28px' src='./images/file.png'></img>"+
+"</div></a>";
+  }else{
+    var fileshtml="<div class='box'>" +
+ "<div class='box2'style='text-align:center;'>"+
+ file.filename+
+ "</div>"+
+ "<a href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' target='_blank'><img style='height:28px' onclick='' src='./images/file.png'></img></a>"+
+"</div>";
+  }
+  $message.append(fileshtml);
+  $message.append("<script>function imagedown() { window.open('"+$message1+"');}</script>")
+  $messages.append($message);
+  $message1='';
+  var obj = $("ul.messages.list-group");
+  var offset = obj.offset();
+  var scrollLength = obj[0].scrollHeight;
+  //  offset.top += 20;
+  $("ul.messages.list-group").animate({
+    scrollTop: scrollLength 
+  },10);
  
   //socket.emit('image', image)
   //$("#imagechat").attr('src',"data:image/jpg;base64,"+image)
@@ -255,6 +351,53 @@ socket.on('file', file => {
      socket.emit("userSeen", umsg);
    }
  });
+
+
+
+socket.on("messageserver", function(message) {
+  var $messages = $(".messages");
+  var $message = $('<li class = "list-group-item"></li>');
+   console.log("New Message !");
+   console.log(message.text);
+   // insert messages in container
+  
+
+    momentTimestamp = moment.utc(message.timestamp).local().format("HH:mm");
+   //$(".messages").append($('<p>').text(message.text));
+   $message.append("<strong>" + momentTimestamp + " " + message.name + "</strong>");
+   $message.append("<p>" + message.text + "</p>");
+   $messages.append($message);
+   // handle autoscroll
+   // manage autoscroll
+   var obj = $("ul.messages.list-group");
+   var offset = obj.offset();
+   var scrollLength = obj[0].scrollHeight;
+   //  offset.top += 20;
+  $("ul.messages.list-group").animate({
+     scrollTop: scrollLength
+   },10);
+
+   // try notify , only when user has not open chat view
+   if (document[hidden]) {
+     notifyMe(message);
+     // also notify server that user has not seen messgae
+     var umsg = {
+       text: name + " has not seen message",
+       read: false
+     };
+     socket.emit("userSeen", umsg);
+   } else {
+     // notify  server that user has seen message
+     var umsg = {
+       text: name + " has seen message",
+       read: true,
+       user: name
+     };
+     socket.emit("userSeen", umsg);
+   }
+ });
+
+
 
  // handles submitting of new message
  var $form = $("#messageForm");
@@ -354,3 +497,4 @@ socket.on('file', file => {
    // At last, if the user has denied notifications, and you
    // want to be respectful there is no need to bother them any more.
  }
+
