@@ -16,7 +16,7 @@ h1 {
 .mymessages {
   text-align: left;
   color: #000000;
-  font-style: italic;
+  
 }
 ul.messages.list-group {
   max-height: 50vh;
@@ -46,10 +46,22 @@ strong {
   padding: 10px;
   
 }
+.box3 {
+  color: black;
+  width: 450px;
+  border: 2px solid black ;
+  padding: 10px;
+  
+}
 .box2{
   height: 0px;
   width: 0px;
   padding-left: 40px;
+  color: black;
+}
+.box4{
+  padding-left: 40px;
+  height: 0px;
   color: black;
 }
 
@@ -59,3 +71,12 @@ strong {
     border-color: white;
 
 }
+.btn-light {
+    color: black;
+    background-color: #fff;
+    border-color: black;
+
+}
+.tooltip:not(.shown) {
+          display: none;
+      }

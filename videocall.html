@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video chat</title>
+     <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.css">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="/js/easytimer.min.js"></script>
+  <link href="/css/style.css" rel="stylesheet">
+    <style>
+      .me{
+        position: relative;
+        margin: 10px;
+        float: right;
+      }
+      .avatar{
+            
+            height: 150px;
+            width:200px;    
+            border:1px solid black;
+            border-radius: 10px;
+            top: 0px!important;
+            left: 50%!important;
+            
+      }
+      .max{
+        position: absolute!important;
+        left: 0px;
+        bottom: 0px;
+        width: 100vw!important;
+        z-index: -10!important;
+        
+      }
+      
+  .timer{
+    position: absolute;
+    bottom: 50px;
+    text-align: center;
+    z-index: 100;
+    border: 10px solid lightgrey;
+    border-radius: 10px;
+    background-color: lightgrey;
+    color: grey;
+    font-size: 20px;
+  }
+    .toolbar-container{
+      position: absolute;
+      bottom: 50px;
+      text-align: center;
+      z-index: 100;
+      left: 45%;
+      border: 10px solid lightgrey;
+      border-radius:10px;
+      background-color: lightgrey;
+    }
+
+    .toolbar{
+      ar {
+    background-color: rgba(0,0,0,.3);
+    position: relative;
+    left: -50%;
+    padding: 10px;
+   // -moz-border-radius: 5px;
+    border-radius: 5px;
+    }
+      }
+    </style>
+</head>
+<body>
+
+    <div class="me" id="vid1">
+    <div  id="vid1img" class="avatar" style="display:none;" >
+      <img style="height:150px;width:200px"  src="./images/logo.png" ></img>
+    </div>
+    </div>
+    
+    <div class="max" id="vid2"></div>
+    <div id="timer" class="timer"><b>00:00:00</b></div>
+    <div class="toolbar-container">
+      <div class="toolbar">
+        <button class="btn btn-primary" id="mutemic" class >
+          <i id="micicon" class="fas fa-microphone"></i>
+        </button>
+        <button  class="btn btn-danger" id="callclose">
+          <i class="fas fa-phone-slash"></i>
+        </button>
+        <button class="btn btn-primary" id="mutevid" >
+          <i id="vidicon" class="fas fa-video"></i>
+        </button>
+      </div>
+    </div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+<script src="./js/jcclient.js"></script>
+<script>
+    var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+};
+    // Step 2. Initialize Object
+ 
+    
+      var user=getUrlParameter("utente")
+      var room =getUrlParameter("room")
+      //console.log(user)
+     // console.log(room)
+     // if(user!=""&&room!=""&&room.length==10){
+      
+      
+      
+       var jc = new JCClient({'userid': user, 'apiKey': '860a0053-78ce-411d-936b-1cde20c8884a',"serverName":"https://jump.chat"});
+
+    // Step 3: Create local video
+    jc.localVideo(function(video) {
+        video.id = 'me'
+        //video.poster("./logo.png.png")
+        video.style="display: inline-block; margin-left: 0px;top: 0px;width:200px;border-radius:10px"
+      
+        //console.log("dasdasdasd",video)
+        if(video){
+        $("#vid1").append(video);
+        }else{
+          $("#me").css("display","none")
+        $("#vid1img").css("display","")
+        }
+        jc.broadcastVideo(true);
+        jc.broadcastAudio(true);
+    });
+
+    // Step 4: Handle basic events
+    jc.on('joined', function(e, userid) {
+        //console.log("ciao")
+        var timer = new easytimer.Timer();
+        timer.start();
+
+        timer.addEventListener('secondsUpdated', function (e) {
+            $('#timer').html(timer.getTimeValues().toString());
+        });
+    });
+    jc.on('remoteVideoAdded', function(e, userid, videoid, video) {
+        video.id = userid;
+        video.style="display: inline-block;top: 0px;margin-top: 0px;width: 100%;"
+        //console.log("videoooo",video)
+        
+        $("#vid2").append(video);
+       
+    });
+    jc.on('remoteVideoRemoved', function(e, userid, videoid) {
+        $('#' + userid).remove();
+    });
+    jc.on("userLeft",function(e, userid) {
+       // console.log("left user"+userid)
+    });
+
+    // Step 5: Join room
+    
+    var type = "random";
+    var password = "";
+    jc.join(room, type, password, function() {
+        //console.log('joined');
+        //jc.broadcastVideo(false);
+    
+    });
+    $("#callclose").click(()=>{
+      window.close()
+    })
+    $("#mutevid").click(()=>{
+     // console.log( $("#vidicon").attr('class'))
+      if($("#vidicon").attr('class')=="fas fa-video"){
+        $("#vidicon").attr('class',"fas fa-video-slash")
+        jc.broadcastVideo(false);
+        $("#me").css("display","none")
+        $("#vid1img").css("display","")
+      }else{
+         $("#vidicon").attr('class',"fas fa-video")
+        $("#me").css("display","block")
+        $("#vid1img").css("display","none")
+        jc.broadcastVideo(true);
+        
+      }
+      //jc.broadcastVideo(false);
+    })
+      $("#mutemic").click(()=>{
+      //console.log( $("#micicon").attr('class'))
+      if($("#micicon").attr('class')=="fas fa-microphone"){
+        $("#micicon").attr('class',"fas fa-microphone-slash")
+        jc.broadcastAudio(false);
+      }else{
+         $("#micicon").attr('class',"fas fa-microphone")
+        jc.broadcastAudio(true);
+      }
+      //jc.broadcastVideo(false);
+    })
+   // }else{
+   //   alert("compila entrambi i campi!")
+   // }
+    
+    
+   
+</script>
+</html>

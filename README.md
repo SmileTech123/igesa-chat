@@ -1,9 +1,8 @@
 # sockets
-chat app
-This is sample chat application using Node JS & socket.io
+chat app igesa
 
-Users can chat in realtime across various meeting rooms.
+Semplice app di chat per comunicare con i clienti in tempo reale
 
-Demo: https://bhupendra1011.herokuapp.com/
-"# igesa-chat" 
-const Database = require("@replit/database")
+Sito: https://igesa-chat.fabiogerman.repl.co/
+
+

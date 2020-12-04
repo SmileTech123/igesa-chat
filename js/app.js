@@ -1,16 +1,23 @@
  var socket = io();
+ var uploader = new SocketIOFileUpload(socket);
+
  //var $messages = $(".messages");
 //var $message = $('<li class = "list-group-item"></li>')
 var momentTimestamp=""
+var videochat=""
 
 $( document ).ready(function() {
-    var x = document.cookie;
+  
+    var x = Cookies.get('color')
+    console.log(x)
     $('[data-toggle="tooltip"]').tooltip()
   if(x=="btn btn-light"||x==""){
     $("#icons").css({"background-color":"#2d2d2d","border":"2px solid lightgrey","border-radius": "25px","padding": "5px","background-color":"lightgrey","color":"black"});
+    $("body").css({"background":"linear-gradient(rgba(255,255,255,80%),rgba(255,255,255,80%)),url(./images/logo.png)"});
         $("#icons2").css({"background-color":"#2d2d2d","border":"2px solid lightgrey","border-radius": "25px","padding": "5px","background-color":"lightgrey","color":"black"})
+         $("#icons3").css({"background-color":"#2d2d2d","border":"2px solid lightgrey","border-radius": "25px","padding": "5px","background-color":"lightgrey","color":"black"})
   } else{
-     $(".btn").removeClass("btn btn-light").addClass("btn btn-dark");               
+     $(".btn").removeClass("btn btn-light").addClass("btn btn-dark");            $("body").css({"background":"linear-gradient(rgba(0,0,0,80%),rgba(0,0,0,80%)),url(./images/logo.png)"});      
      $(this).addClass("btn btn-dark");
      $("#bottonecolore").text("Dark mode");
      $("#sfondoform").css("background-color","#2d2d2d");
@@ -19,20 +26,42 @@ $( document ).ready(function() {
      $("h1").css("color","white");
       $("#sharecolor").css("background-color","#2d2d2d");
        $("#sharecolor2").css("background-color","#2d2d2d");
+       $("#sharecolor3").css("background-color","#2d2d2d");
         $("#icons").css({"background-color":"#2d2d2d","border":"2px solid white","border-radius": "25px","padding": "5px","background-color":" white","color":"black"});
         $("#icons2").css({"background-color":"#2d2d2d","border":"2px solid white","border-radius": "25px","padding": "5px","background-color":" white","color":"black"});
+         $("#icons3").css({"background-color":"#2d2d2d","border":"2px solid white","border-radius": "25px","padding": "5px","background-color":" white","color":"black"});
   }
 });
- 
+
+$( "#send" ).click(function() {
+  $( "#messagebox" ).focus();
+});
+$( "#file-image" ).click(function() {
+  $( "#messagebox" ).focus();
+});
+$( "#file-input" ).click(function() {
+  $( "#messagebox" ).focus();
+});
+ uploader.chunkSize=1024*5000
+ uploader.listenOnInput(document.getElementById("file-input"));
  // listen for server connection
  // get query params from url
  var name = getQueryVariable("name") || 'Anonymous';
  var room = getQueryVariable("room") || 'No Room Selected';
-
+$("#buttonvolume").click(()=>{
+  var classes = $("#volumeicon").attr("class")
+  console.log(classes)
+ if(classes=="fas fa-volume-up"){
+  $("#volumeicon").removeClass("fas fa-volume-up").addClass("fas fa-volume-mute"); 
+  $(this).addClass("fas fa-volume-mute");
+  }else{
+     $("#volumeicon").removeClass("fas fa-volume-mute").addClass("fas fa-volume-up"); 
+  $(this).addClass("fas fa-volume-up");
+  }
+})
  var preview = document.querySelector('#imagepreview');
  $(preview).hide()
  var reader  = new FileReader();
- console.log("ciao")
  function previewFile() {
   
   var file    = document.querySelector('input[type=file]').files[0];
@@ -56,12 +85,47 @@ $( document ).ready(function() {
   }
 }
 
-function previewFile2() {
+socket.on("upload.progress", function(prg){
+  $('#carica').remove();
+  console.log(prg)
+   var $messages = $(".messages");
+  var $message = $('<li  id="carica" class="list-group-item"></li>');
+  var momentTimestamp = moment.utc(prg.timestamp).local().format
+  ("HH:mm");
+  momentTimestamp=moment().format("HH:mm");
+  $message.append("<strong>" + momentTimestamp + " " + name + "</strong>");
+  $message.append("<p></p>");
+    $message.append('<div  class="progress">'+
+  '<div class="progress-bar progress-bar-striped progress-bar-animated active" '+'role="progressbar" aria-valuenow="'+prg.percentage+'" aria-valuemin="0" '+'aria-valuemax="100" style="width:'+prg.percentage+'%">Caricamento: '+prg.percentage+'%</div>'+
+'</div>');
+    $messages.append($message);
+     var obj = $("ul.messages.list-group");
+  var offset = obj.offset();
+  var scrollLength = obj[0].scrollHeight;
+  //  offset.top += 20;
+  $("ul.messages.list-group").animate({
+    scrollTop: scrollLength - offset.top
+  });
+  if(prg.percentage==100){
+  socket.emit('file', {
+      file: prg.file,
+      filename:prg.name,
+      name: name,
+      timestamp:momentTimestamp
+    });
+  }
+    //const base64 = this.result.replace(/.*base64,/, '');
+})
+
+    
+    
+/*function previewFile2() {
   
   var file = document.querySelector('input[id=file-input]').files[0];
   console.log(file)
   reader.onload = function(){
-    //const base64 = this.result.replace(/.*base64,/, '');
+ 
+  
     momentTimestamp=moment().format("HH:mm");
     socket.emit('file', {
       file:file,
@@ -74,12 +138,17 @@ function previewFile2() {
 
 
   if (file) {
+    
     reader.readAsDataURL(file);
    
   } else {
     preview.src = "";
   }
 }
+
+
+*/
+
 
  $(".room-title").text("Stanza: "+room);
  // fires when client successfully conencts to the server
@@ -141,7 +210,11 @@ function previewFile2() {
  });
 
  socket.on("userSeen", function(msg) {
-
+ 
+ 
+  
+    
+    
   // if (msg.user == name) {
      // read message
      // show messags only to user who has typied
@@ -152,20 +225,24 @@ function previewFile2() {
        //user read the message
        icon.addClass("msg-read");
      } else {
+         
        // message deleiverd but not read yet
        icon.addClass("msg-delieverd");
      }
      console.log(msg);
+     i=0
    //}
  });
 
 
  socket.on('image', image => {
-  console.log(image)
+  
 
   var $messages = $(".messages");
   var $message = $('<li class = "list-group-item"></li>');
-  var $message1= "data:image/jpg;base64,"+image.image
+play()
+
+  var $message1= "data:image/png;base64,"+image.image
   var momentTimestamp = moment.utc(image.timestamp).local().format("HH:mm");
   $message.append("<strong>" + momentTimestamp + " " + image.name + "</strong>");
   $message.append("<p></p>");
@@ -174,7 +251,7 @@ function previewFile2() {
 
   $messages.append($message);
   $message1='';
-  var obj = $("ul.messages.list-group");
+  var obj = $("ul.messages.list-group").attr("id","boxlist");
   var offset = obj.offset();
   var scrollLength = obj[0].scrollHeight;
   //  offset.top += 20;
@@ -192,10 +269,10 @@ function previewFile2() {
  socket.on('imageserver', image => {
   //alert("ciao")
 
-
+  
   var $messages = $(".messages");
   var $message = $('<li class = "list-group-item"></li>');
-  var $message1= "data:image/jpg;base64,"+image.image
+  var $message1= "data:image/png;base64,"+image.image
   var momentTimestamp = moment.utc(image.timestamp).local().format("HH:mm");
   $message.append("<strong>" + momentTimestamp + " " + image.name + "</strong>");
   $message.append("<p></p>");
@@ -218,13 +295,68 @@ function previewFile2() {
 });
 
 
+socket.on('videocall',videocall=>{
+if(videocall.name!=name){
+  var $messages = $(".messages");
+  var $message = $('<li class = "list-group-item"></li>')
+  play()
+  //var $message1= file.file
+   var momentTimestamp = moment.utc(videocall.timestamp).local().format("HH:mm");
+    $message.append("<strong>" + momentTimestamp + " " + videocall.name + "</strong>");
+  $message.append("<p></p>");
+    var fileshtml="<a> <div id='callbox' class='box3'>" +
+ "<div class='box4'style='text-align:center'>"+
+ "<a href='https://igesa-chat.fabiogerman.repl.co/videocall.html?user="+name+"&room="+videocall.room+"' target='_blank'class='btn btn-primary' style='margin-right:10px'>Accetta</a>"+
+ "<button id='rifiuta' onlcick='callblockremove()'class='btn btn-primary'>Rifiuta</button>"+
+ "</div>"+
+ "<p>Videochiamata in corso</p>"+
+"</div></a>";
+$message.append(fileshtml);
+  $messages.append($message);
+  $message1='';
+  var obj = $("ul.messages.list-group");
+  var offset = obj.offset();
+  var scrollLength = obj[0].scrollHeight;
+  //  offset.top += 20;
+  $("ul.messages.list-group").animate({
+    scrollTop: scrollLength - offset.top
+  });
+  }else{
+    var $messages = $(".messages");
+  var $message = $('<li class = "list-group-item"></li>')
+  play()
+  //var $message1= file.file
+   var momentTimestamp = moment.utc(videocall.timestamp).local().format("HH:mm");
+    $message.append("<strong>" + momentTimestamp + " " + videocall.name + "</strong>");
+  $message.append("<p></p>");
+    var fileshtml="<a> <div class='box3'>" +
+ "<div class='box4'style='text-align:center'>"+
+ "</div>"+
+ "<p>Videochiamata inviata</p>"+
+"</div></a>";
+$message.append(fileshtml);
+  $messages.append($message);
+  $message1='';
+  var obj = $("ul.messages.list-group");
+  var offset = obj.offset();
+  var scrollLength = obj[0].scrollHeight;
+  //  offset.top += 20;
+  $("ul.messages.list-group").animate({
+    scrollTop: scrollLength - offset.top
+  });
+
+  }
+})
+
 
 socket.on('file', file => {
   //Sconsole.log(image)
   console.log(file)
 
+$('#carica').remove();
   var $messages = $(".messages");
   var $message = $('<li class = "list-group-item"></li>');
+  play()
   var $message1= file.file
   var momentTimestamp = moment.utc(file.timestamp).local().format("HH:mm");
   $message.append("<strong>" + momentTimestamp + " " + file.name + "</strong>");
@@ -237,12 +369,12 @@ socket.on('file', file => {
  "<img style='height:28px' src='./images/file.png'></img>"+
 "</div></a>";
   }else{
-    var fileshtml="<div class='box'>" +
- "<div class='box2'style='text-align:center;'>"+
+    var fileshtml="<a data-toggle='tooltip'title='"+file.filename+"'  href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' download> <div class='box'>" +
+ "<div class='box2'style='text-align:center'>"+
  file.filename+
  "</div>"+
- "<a href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' target='_blank'><img style='height:28px' onclick='' src='./images/file.png'></img></a>"+
-"</div>";
+ "<img style='height:28px' src='./images/file.png'></img>"+
+"</div></a>";
   }
   $message.append(fileshtml);
   $message.append("<script>function imagedown() { window.open('"+$message1+"');}</script>")
@@ -282,12 +414,12 @@ socket.on('fileserver', file => {
  "<img style='height:28px' src='./images/file.png'></img>"+
 "</div></a>";
   }else{
-    var fileshtml="<div class='box'>" +
- "<div class='box2'style='text-align:center;'>"+
+var fileshtml="<a data-toggle='tooltip'title='"+file.filename+"'  href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' download> <div class='box'>" +
+ "<div class='box2'style='text-align:center'>"+
  file.filename+
  "</div>"+
- "<a href='https://igesa-chat.fabiogerman.repl.co/tmp/file/"+file.filename+"' target='_blank'><img style='height:28px' onclick='' src='./images/file.png'></img></a>"+
-"</div>";
+ "<img style='height:28px' src='./images/file.png'></img>"+
+"</div></a>";
   }
   $message.append(fileshtml);
   $message.append("<script>function imagedown() { window.open('"+$message1+"');}</script>")
@@ -315,7 +447,8 @@ socket.on('fileserver', file => {
    console.log("New Message !");
    console.log(message.text);
    // insert messages in container
-  
+    play()
+ 
 
     momentTimestamp = moment.utc(message.timestamp).local().format("HH:mm");
    //$(".messages").append($('<p>').text(message.text));
@@ -324,6 +457,7 @@ socket.on('fileserver', file => {
    $messages.append($message);
    // handle autoscroll
    // manage autoscroll
+ play()
    var obj = $("ul.messages.list-group");
    var offset = obj.offset();
    var scrollLength = obj[0].scrollHeight;
@@ -331,9 +465,10 @@ socket.on('fileserver', file => {
   $("ul.messages.list-group").animate({
      scrollTop: scrollLength - offset.top
    });
-
+  play()
    // try notify , only when user has not open chat view
    if (document[hidden]) {
+       
      notifyMe(message);
      // also notify server that user has not seen messgae
      var umsg = {
@@ -341,6 +476,7 @@ socket.on('fileserver', file => {
        read: false
      };
      socket.emit("userSeen", umsg);
+     play()
    } else {
      // notify  server that user has seen message
      var umsg = {
@@ -349,6 +485,7 @@ socket.on('fileserver', file => {
        user: name
      };
      socket.emit("userSeen", umsg);
+     play()
    }
  });
 
@@ -401,11 +538,12 @@ socket.on("messageserver", function(message) {
 
  // handles submitting of new message
  var $form = $("#messageForm");
- var $message1 = $form.find('input[name=message]');
+ var $message1 = $("#messagebox");
  $form.on("submit", function(event) {
-
+   console.log()
    event.preventDefault();
-   var msg = $message1.val();
+   console.log($("#messagebox").val())
+   var msg = $("#messagebox").val()
    //prevent js injection attack
    msg = msg.replace(/</g, "&lt;").replace(/>/g, "&gt;").trim();
    if (msg === "") return -1; //empty messages cannot be sent
@@ -419,17 +557,17 @@ socket.on("messageserver", function(message) {
    // show user messageForm
    var $messages = $(".messages");
    var $message = $('<li class = "list-group-item"></li>');
-
-   
+  play()
+   console.log("messaggio")
    // $(".messages").append($('<p>').text(message.text));
    $message.append("<strong>" + momentTimestamp + " " + name + "</strong>");
    //$message.append("<p>" + $message1.val()+ "</p>");
    $message.append($("<p>", {
      class: "mymessages",
-     text: $message1.val()
+     text: $("#messagebox").val()
    }));
    $messages.append($message);
-   $message1.val('');
+   $("#messagebox").val('')
    // manage autoscroll
    var obj = $("ul.messages.list-group");
    var offset = obj.offset();
@@ -497,4 +635,49 @@ socket.on("messageserver", function(message) {
    // At last, if the user has denied notifications, and you
    // want to be respectful there is no need to bother them any more.
  }
+function callblockremove(){
+  console.log("ciao")
+}
+ function play(){
+   var audio = new Audio('./images/pop.mp3')
+   audio.volume = 0.2
+    var classes = $("#volumeicon").attr("class")
+   if(classes=="fas fa-volume-up"){
+  audio.play()
+  }else{
+    audio.muted
+  }
+ }
 
+ $("#buttonvideochat").click(()=>{
+      
+      if(room.length<10){
+        let r = Math.random().toString(36).substring(2, 12-room.length);
+         $("#buttonvideochat").attr("href","https://igesa-chat.fabiogerman.repl.co/videocall.html?utente="+name+"&room="+room+r)
+         socket.emit('videocall', {
+         room:room+r,
+         name: name,
+         timestamp:momentTimestamp
+        });
+       // console.log(r)
+      }else if(room.length>10){
+        let r = room.substring(0,10)
+         $("#buttonvideochat").attr("href","https://igesa-chat.fabiogerman.repl.co/videocall.html?utente="+name+"&room="+r)
+         socket.emit('videocall', {
+         room:r,
+         name: name,
+         timestamp:momentTimestamp
+        });
+       
+      }else if(room.length==10){
+        let r = room
+           $("#buttonvideochat").attr("href","https://igesa-chat.fabiogerman.repl.co/videocall.html?utente="+name+"&room="+r)
+         socket.emit('videocall', {
+         room:r,
+         name: name,
+         timestamp:momentTimestamp
+      })
+      }
+ })
+      
+   

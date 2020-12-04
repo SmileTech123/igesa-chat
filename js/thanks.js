@@ -1,5 +1,5 @@
 $( document ).ready(function() {
-    var x = document.cookie;
+     var x = Cookies.get('color')
     console.log(x)
   if(x=="btn btn-light"||x==""){
 

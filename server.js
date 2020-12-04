@@ -1,11 +1,15 @@
 var PORT = process.env.PORT || 3000;
 var PORTHTTPS = process.env.PORT || 4000; // take port from heroku or for loacalhost
+var siofu = require("socketio-file-upload");
+
  var data=new Date()
     var anno= data.getFullYear()
     var mese = data.getMonth()
     var giorno= data.getDate()
+
 var express = require("express");
 var room
+var progress = require('progress-stream');
 const Database = require("@replit/database")
 const db = new Database()
 
@@ -41,7 +45,9 @@ var io = require("socket.io")(server);
 
 // expose the folder via express thought
 app.use(express.static(__dirname,{index:'index.html'}));
+//app.use("/", express.static(__dirname + '/'));
 
+app.use(siofu.router)
 // send current users to provided scoket
 function sendCurrentUsers(socket) { // loading current users
   var info = clientInfo[socket.id];
@@ -65,7 +71,7 @@ function sendCurrentUsers(socket) { // loading current users
   });
   // emit message when all users list
 
-  socket.emit("message", {
+  socket.emit("messageserver", {
     name: "Sistema",
     text: "Utente Corrente : " + users.join(', '),
     timestamp: moment().valueOf()
@@ -76,6 +82,21 @@ function sendCurrentUsers(socket) { // loading current users
 
 // io.on listens for events
 io.on("connection", async function(socket) {
+
+  var uploader = new siofu();
+    uploader.dir = "./tmp/file";
+    uploader.listen(socket);
+    uploader.on('progress', function(event) {
+      console.log(event.file.name)
+    console.log(Math.floor(event.file.bytesLoaded / event.file.size *100))
+    socket.emit('upload.progress', {
+      percentage:(Math.floor(event.file.bytesLoaded / event.file.size *100)) ,
+      timestamp: event.file.mtime,
+      name: event.file.name,
+      file: event.file
+      
+    })
+});
   getSize("./tmp/log", (err, size) => {
   if (err) { throw err; }
   var dimension=(size / 1024 / 1024).toFixed(2)
@@ -94,7 +115,7 @@ io.on("connection", async function(socket) {
     if (typeof(userdata !== undefined)) {
       socket.leave(userdata.room); // leave the room
       //broadcast leave room to only memebers of same room
-      socket.broadcast.to(userdata.room).emit("message", {
+      socket.broadcast.to(userdata.room).emit("messageserver", {
         text: userdata.name + " si è disconnesso",
         name: "Sistema",
         timestamp: moment().valueOf()
@@ -152,18 +173,24 @@ io.on("connection", async function(socket) {
 
    var deletemex=fs.readdirSync("./tmp/log/"+room)
     var fileoggi=anno+"-"+mese+"-"+giorno
-    //console.log(deletemex[0])
-    console.log(fileoggi+".json")
-    if(deletemex[0]!=fileoggi+".json"){
-      if(!fs.statSync("./tmp/log/"+room+"/"+deletemex[0]).isDirectory()){
+    console.log(deletemex[0])
+    //console.log(fileoggi)
+    console.log("2020-10-20"+".json")
+    console.log(deletemex[0]!=fileoggi+".json")
+    if(deletemex[0]==fileoggi+".json"){
+      console.log("uguali")
+    
+    }else{
+      console.log("diversi cancella")
+        if(!fs.statSync("./tmp/log/"+room+"/"+deletemex[0]).isDirectory()){
       fs.unlinkSync("./tmp/log/"+room+"/"+deletemex[0])
     }
     }
     //broadcast new user joined room
-    socket.broadcast.to(req.room).emit("message", {
+    socket.broadcast.to(req.room).emit("messageserver", {
       name: "Sistema",
       text: req.name + ' si è connesso!',
-      timestamp: moment().valueOf()
+      timestamp: moment().valueOf(),
     });
 
   });
@@ -181,8 +208,8 @@ io.on("connection", async function(socket) {
 
   });
 
-  socket.emit("message", {
-    text: "Benvenuto in Igesa Chat",
+  socket.emit("messageserver", {
+    text: "Salve! \n rimanga in attesa, un operatore sarà subito da voi!😉",
     timestamp: moment().valueOf(),
     name: "Sistema"
   });
@@ -202,7 +229,13 @@ io.on("connection", async function(socket) {
        }
     if(fs.existsSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")){
       //console.log("esisto")
+      var now=""+anno+mese+giorno
+      console.log(now)
        var filex=fs.readFileSync("./tmp/log/"+room+"/"+anno+"-"+mese+"-"+giorno+".json")
+       
+       
+   
+       
       dati=JSON.parse(filex)
       console.log(message.timestamp)
       dati.messaggi.push({
@@ -246,6 +279,7 @@ io.on("connection", async function(socket) {
       //socket.broadcast.emit("message",message);
       // now message should be only sent to users who are in same room
       socket.broadcast.to(clientInfo[socket.id].room).emit("message", message);
+
       //socket.emit.to(clientInfo[socket.id].room).emit("message", message);
     }
 
@@ -299,7 +333,7 @@ io.on("connection", async function(socket) {
 
 
 socket.on('file', async file => {
-
+  console.log(file)
   var textlog= file.time+"\n"+"Utente: "+file.name+" Messaggio: "+file.image+"\n"
      fs.writeFileSync("./tmp/log/"+room+"/txt/"+anno+"-"+mese+"-"+giorno+".txt",textlog,{flag:"a"})
     var dati={
@@ -332,29 +366,51 @@ socket.on('file', async file => {
     
     size=(size / 1024 / 1024).toFixed(2)
     //console.log(size + ' MB');
-    if(size>50){
+    if(size>100){
       fs.emptyDirSync('./tmp/file')
     }
   });
 
 
-  const buffer = Buffer.from(file.file);
-  fs.writeFileSync('./tmp/file/'+file.filename, buffer) // fs.promises
+  
+ // fs.promises
   /*socket.emit('image',image.toString('base64'))
   socket.broadcast.to(clientInfo[socket.id].room).emit('image', image.toString('base64'));*/
   if (file.name === "@currentUsers") {
     sendCurrentUsers(socket);
   } else {
     //broadcast to all users except for sender
-    file.timestamp = moment().valueOf();
-    //socket.broadcast.emit("message",message);
-    // now message should be only sent to users who are in same room
-    socket.broadcast.to(clientInfo[socket.id].room).emit("file", file);
-    socket.emit('file',file);
-  }
-// fs.promises
-});
+      file.timestamp = moment().valueOf();
+      //socket.broadcast.emit("message",message);
+      // now message should be only sent to users who are in same room
+      socket.broadcast.to(clientInfo[socket.id].room).emit("file", file);
+      socket.emit('file', file);
+    }
+    // fs.promises
+  });
 
+
+
+
+socket.on('videocall', async videocall => {
+  
+  console.log(videocall)
+ // fs.promises
+  /*socket.emit('image',image.toString('base64'))
+  socket.broadcast.to(clientInfo[socket.id].room).emit('image', image.toString('base64'));*/
+  if (videocall.name === "@currentUsers") {
+    sendCurrentUsers(socket);
+  } else {
+    //broadcast to all users except for sender
+      videocall.timestamp = moment().valueOf();
+      
+      //socket.broadcast.emit("message",message);
+      // now message should be only sent to users who are in same room
+      socket.broadcast.to(clientInfo[socket.id].room).emit("videocall", videocall);
+      socket.emit('videocall', videocall);
+    }
+    // fs.promises
+  });
 
 });
 /*http.listen(PORT, function() {
@@ -365,7 +421,7 @@ https.listen(PORTHTTPS,function(){
 })*/
 /*httpServer.listen(8080);
 httpsServer.listen(8443);*/
-server.listen(PORTHTTPS,function(){
+server.listen(PORTHTTPS, function() {
   console.log('server up and running at %s port', PORTHTTPS);
 })
 /*serverhttp.listen(PORT,function(){
