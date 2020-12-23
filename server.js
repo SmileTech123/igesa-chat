@@ -1,6 +1,14 @@
 var PORT = process.env.PORT || 3000;
 var PORTHTTPS = process.env.PORT || 4000; // take port from heroku or for loacalhost
+const path = require('path');
 var siofu = require("socketio-file-upload");
+var soap = require('soap'),
+    Cookie = require('soap-cookie');
+var soapcall
+var adminaccess
+    var argssql={"SQL":"Select * from tabuser  where (datafinerapport>current_date or datafinerapport is null) and codarea in ('HOTLINE') ORDER BY nome ASC "}
+
+
 
  var data=new Date()
     var anno= data.getFullYear()
@@ -39,6 +47,40 @@ var server = http.createServer(options,app)
 var moment = require("moment");
 
 var clientInfo = {};
+
+app.post('/users', async function (req, res) {
+   soapcall = await soap.createClientAsync("http://mts.igesa.it:8686/mts/megadb.asmx?WSDL")
+  var args = {};
+   adminaccess = req.query.username
+  var password = req.query.password
+  args={"User":adminaccess,"Password":password}
+  soapcall.Login(args, function(err, response) {
+  soapcall.setSecurity(new Cookie(soapcall.lastResponseHeaders));
+  res.json(response)
+});
+});
+app.get("/accessiadmin",function(req,res){
+  res.sendFile(path.join(__dirname + '/accessiadmin.html'));
+})
+app.get("/assistenza",function(req,res){
+  //var soapcall=soap.createClientAsync("http://mts.igesa.it:8686/mts/megadb.asmx?WSDL")
+  if(soapcall!=undefined){
+  soapcall.GetSQL(argssql,function(err, response) {
+    if(response.GetSQLResult){
+    res.json(response.GetSQLResult.diffgram.NewDataSet.tabuser)
+    }else{
+      res.json({"msg":"errore"})
+    }
+  })
+  }else{
+    res.json({"msg":"errore"})
+  }
+})
+app.get('/adminuser',function(req,res){
+  res.json(adminaccess)
+})
+
+
 
 //socket io module
 var io = require("socket.io")(server);
@@ -80,6 +122,8 @@ function sendCurrentUsers(socket) { // loading current users
 }
 
 
+
+
 // io.on listens for events
 io.on("connection", async function(socket) {
 
@@ -113,14 +157,16 @@ io.on("connection", async function(socket) {
     var userdata = clientInfo[socket.id];
     
     if (typeof(userdata !== undefined)) {
-      socket.leave(userdata.room); // leave the room
+      if(userdata){
+      socket.leave(userdata.room);
+       // leave the room
       //broadcast leave room to only memebers of same room
       socket.broadcast.to(userdata.room).emit("messageserver", {
         text: userdata.name + " si è disconnesso",
         name: "Sistema",
         timestamp: moment().valueOf()
       });
-
+}
       // delete user data-
       delete clientInfo[socket.id];
 
@@ -129,6 +175,8 @@ io.on("connection", async function(socket) {
 
   // for private chat
   socket.on('joinRoom', function(req) {
+    //console.log(req)
+    io.sockets.emit("clientconnect",JSON.stringify({"utente":req.name,"room":req.room}))
     clientInfo[socket.id] = req;
     room=req.room
     socket.join(req.room);
@@ -388,6 +436,7 @@ socket.on('file', async file => {
     }
     // fs.promises
   });
+
 
 
 

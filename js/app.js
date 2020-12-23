@@ -84,7 +84,9 @@ $("#buttonvolume").click(()=>{
     preview.src = "";
   }
 }
-
+socket.on("clientconnect",function(data){
+  console.log(data)
+})
 socket.on("upload.progress", function(prg){
   $('#carica').remove();
   console.log(prg)
@@ -148,7 +150,14 @@ socket.on("upload.progress", function(prg){
 
 
 */
-
+$("#submitchat").click(()=>{
+  alert("Ciao")
+  if($("#name").val()==""){
+    $("#formchat").attr("action","#")
+  }else{
+    $("#formchat").attr("action","/chat.html")
+  }
+})
 
  $(".room-title").text("Stanza: "+room);
  // fires when client successfully conencts to the server
@@ -298,16 +307,19 @@ play()
 socket.on('videocall',videocall=>{
 if(videocall.name!=name){
   var $messages = $(".messages");
-  var $message = $('<li class = "list-group-item"></li>')
+  var $message = $('<li id="refusecall" class = "list-group-item"></li>')
   play()
+  var namenormalize=name.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  namenormalize=namenormalize.replace(/\s/g, '')
+  namenormalize=namenormalize.toLowerCase()
   //var $message1= file.file
    var momentTimestamp = moment.utc(videocall.timestamp).local().format("HH:mm");
     $message.append("<strong>" + momentTimestamp + " " + videocall.name + "</strong>");
   $message.append("<p></p>");
     var fileshtml="<a> <div id='callbox' class='box3'>" +
  "<div class='box4'style='text-align:center'>"+
- "<a href='https://igesa-chat.fabiogerman.repl.co/videocall.html?user="+name+"&room="+videocall.room+"' target='_blank'class='btn btn-primary' style='margin-right:10px'>Accetta</a>"+
- "<button id='rifiuta' onlcick='callblockremove()'class='btn btn-primary'>Rifiuta</button>"+
+ "<a href='https://gotalk.to/"+videocall.room+"' target='_blank'class='btn btn-primary' style='margin-right:10px'onclick='callblockremove()'>Accetta</a>"+
+ "<button id='rifiuta' onclick='callblockremove()'class='btn btn-primary'>Rifiuta</button>"+
  "</div>"+
  "<p>Videochiamata in corso</p>"+
 "</div></a>";
@@ -636,6 +648,7 @@ socket.on("messageserver", function(message) {
    // want to be respectful there is no need to bother them any more.
  }
 function callblockremove(){
+  $("#refusecall").remove()
   console.log("ciao")
 }
  function play(){
@@ -650,31 +663,39 @@ function callblockremove(){
  }
 
  $("#buttonvideochat").click(()=>{
-      
+       var namenormalize=name.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+ namenormalize=namenormalize.replace(/\s/g, '')
+ namenormalize=namenormalize.toLowerCase()
       if(room.length<10){
         let r = Math.random().toString(36).substring(2, 12-room.length);
-         $("#buttonvideochat").attr("href","https://igesa-chat.fabiogerman.repl.co/videocall.html?utente="+name+"&room="+room+r)
+         $("#buttonvideochat").attr("href","https://gotalk.to/"+room+r)
          socket.emit('videocall', {
          room:room+r,
-         name: name,
+         name: namenormalize,
          timestamp:momentTimestamp
         });
        // console.log(r)
       }else if(room.length>10){
+               var namenormalize=name.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+namenormalize=namenormalize.replace(/\s/g, '')
+namenormalize=namenormalize.toLowerCase()
         let r = room.substring(0,10)
-         $("#buttonvideochat").attr("href","https://igesa-chat.fabiogerman.repl.co/videocall.html?utente="+name+"&room="+r)
+         $("#buttonvideochat").attr("href","https://gotalk.to/"+r)
          socket.emit('videocall', {
          room:r,
-         name: name,
+         name: namenormalize,
          timestamp:momentTimestamp
         });
        
       }else if(room.length==10){
+        var namenormalize=name.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  namenormalize=namenormalize.replace(/\s/g, '')
+  namenormalize=namenormalize.toLowerCase()
         let r = room
-           $("#buttonvideochat").attr("href","https://igesa-chat.fabiogerman.repl.co/videocall.html?utente="+name+"&room="+r)
+           $("#buttonvideochat").attr("href","https://gotalk.to/"+r)
          socket.emit('videocall', {
          room:r,
-         name: name,
+         name: namenormalize,
          timestamp:momentTimestamp
       })
       }
