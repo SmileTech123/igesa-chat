@@ -470,8 +470,8 @@ https.listen(PORTHTTPS,function(){
 })*/
 /*httpServer.listen(8080);
 httpsServer.listen(8443);*/
-server.listen(PORTHTTPS, function() {
-  console.log('server up and running at %s port', PORTHTTPS);
+server.listen(PORT, function() {
+  console.log('server up and running at %s port', PORT);
 })
 /*serverhttp.listen(PORT,function(){
   console.log('server up and running at %s port', PORT)
